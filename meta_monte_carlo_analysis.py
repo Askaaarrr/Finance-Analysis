@@ -115,7 +115,7 @@ fig, ax = plt.subplots(figsize=(14, 8))
 
 hist_tail = df.tail(24)
 ax.plot(hist_tail["date"], hist_tail["close"],
-        color="#1f2a44", lw=2.2, label="История (close)")
+        color="#1f2a44", lw=2.2, label="history (close)")
 ax.scatter(hist_tail["date"], hist_tail["close"],
            color="#1f2a44", s=20, zorder=3)
 
