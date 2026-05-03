@@ -2,18 +2,14 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# -----------------------------
-# 0) Загрузка данных
-# -----------------------------
 df = pd.read_csv('META_5Y_1MONTH_FROM_PERPLEXITY.csv')
-# убираем tz, чтобы дальше не было конфликтов с pd.date_range/offsets
+
 df["date"] = pd.to_datetime(df["date"], utc=True).dt.tz_localize(None)
 df = df.sort_values("date").reset_index(drop=True)
 
 S0 = float(df["close"].iloc[-1])
 last_date = df["date"].iloc[-1]
 
-# Историческая месячная волатильность
 log_returns = np.log(df["close"] / df["close"].shift(1)).dropna()
 sigma_monthly_hist = float(log_returns.std(ddof=1))
 sigma_annual_hist = sigma_monthly_hist * np.sqrt(12)
@@ -22,9 +18,6 @@ print(f"Последняя дата: {last_date.date()}, цена S0 = {S0:.2f}"
 print(f"σ (месячн., историч.) = {sigma_monthly_hist:.4f}")
 print(f"σ (годовая, историч.) = {sigma_annual_hist:.2%}")
 
-# -----------------------------
-# 1) Thesis-consistent assumptions
-# -----------------------------
 TARGET_BASE = 640.0
 TARGET_BULL = 680.0
 TARGET_BEAR = 445.0
@@ -39,19 +32,14 @@ N_SIMS = 20000
 
 rng = np.random.default_rng(42)
 
-# Annual log-return drift, anchored to target prices
 mu_base_annual = np.log(TARGET_BASE / S0)
 mu_bull_annual = np.log(TARGET_BULL / S0)
 mu_bear_annual = np.log(TARGET_BEAR / S0)
 
-# Scenario-specific volatility
 sigma_base_annual = sigma_annual_hist
 sigma_bull_annual = sigma_annual_hist * 0.95
 sigma_bear_annual = sigma_annual_hist * 1.25
 
-# -----------------------------
-# 2) Scenario assignment
-# -----------------------------
 regimes = rng.choice(
     ["base", "bull", "bear"],
     size=N_SIMS,
@@ -68,9 +56,6 @@ sigma_annual = np.select(
     [sigma_base_annual, sigma_bull_annual, sigma_bear_annual],
 ).astype(float)
 
-# -----------------------------
-# 3) Random shocks + downside jump risk
-# -----------------------------
 Z = rng.standard_normal((N_SIMS, N_MONTHS))
 
 jump_prob_annual = 0.18
@@ -86,9 +71,6 @@ increments = (
     + jumps
 )
 
-# -----------------------------
-# 4) Price paths
-# -----------------------------
 cum_log_returns = np.cumsum(increments, axis=1)
 
 paths = np.zeros((N_SIMS, N_MONTHS + 1))
@@ -97,9 +79,6 @@ paths[:, 1:] = S0 * np.exp(cum_log_returns)
 
 final = paths[:, -1]
 
-# -----------------------------
-# 5) Summary stats
-# -----------------------------
 q05, q25, q50, q75, q95 = np.percentile(final, [5, 25, 50, 75, 95])
 mean_final = final.mean()
 
@@ -122,9 +101,6 @@ print(f"P(price >= 680): {prob_hit_680:.1%}")
 print(f"P(price <= 510): {prob_bear_510:.1%}")
 print(f"P(price <= 445): {prob_bear_445:.1%}")
 
-# -----------------------------
-# 6) Timeline for plotting
-# -----------------------------
 # freq="ME" вместо устаревшего "M"
 future_dates = pd.date_range(
     start=last_date + pd.offsets.MonthEnd(1),
@@ -135,9 +111,6 @@ plot_dates = pd.DatetimeIndex([last_date]).append(future_dates)
 
 quantile_paths = np.percentile(paths, [5, 25, 50, 75, 95], axis=0)
 
-# -----------------------------
-# 7) Plot
-# -----------------------------
 fig, ax = plt.subplots(figsize=(14, 8))
 
 hist_tail = df.tail(24)
