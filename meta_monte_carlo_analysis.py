@@ -14,7 +14,7 @@ log_returns = np.log(df["close"] / df["close"].shift(1)).dropna()
 sigma_monthly_hist = float(log_returns.std(ddof=1))
 sigma_annual_hist = sigma_monthly_hist * np.sqrt(12)
 
-print(f"last date: {last_date.date()}, цена S0 = {S0:.2f}")
+print(f"last date: {last_date.date()}, price S0 = {S0:.2f}")
 print(f"σ (month., historical.) = {sigma_monthly_hist:.4f}")
 print(f"σ (annual, historical.) = {sigma_annual_hist:.2%}")
 
@@ -164,4 +164,4 @@ plt.tight_layout(rect=[0, 0.03, 1, 1])
 
 out = "META_scenario_MC_12M.png"
 plt.savefig(out, dpi=140, bbox_inches="tight")
-print(f"\nГрафик сохранён: {out}")
+print(f"\nGraph saved: {out}")
